@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:translator/translator.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:io';
+
 import '../providers/safety_provider.dart';
 import '../models/safety_report.dart';
 import '../models/job.dart';
+import '../config/ai_config.dart';
 import 'package:intl/intl.dart';
 
 class VoiceReportScreen extends StatefulWidget {
@@ -125,22 +128,60 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
     });
 
     try {
-      // Audio file processing pending configuration
+      // Read audio file as bytes
+      final audioBytes = await _audioFile!.readAsBytes();
       
-      // Use Gemini to transcribe audio
-      // Note: For now, we'll use a placeholder since audio transcription requires
-      // additional setup with Google AI Studio API key
-      // TODO: Implement proper audio transcription with Google AI
+      // Initialize Google Generative AI
+      if (!AIConfig.isConfigured) {
+        throw Exception('AI services not configured. Please set up your API key in lib/config/ai_config.dart');
+      }
       
-      // Placeholder transcription for demonstration
-      setState(() {
-        _transcribedText = "Safety concern recorded - transcription pending API setup";
-        _descriptionController.text = _transcribedText;
-        _isTranscribing = false;
-      });
+      final model = GenerativeModel(
+        model: AIConfig.geminiModel,
+        apiKey: AIConfig.googleAIKey,
+      );
       
-      // Auto-detect language and translate if needed
-      await _detectAndTranslate();
+      try {
+        // Create content with audio data
+        final content = Content.multi([
+          TextPart('Please transcribe this audio recording of a safety concern. Return only the transcribed text without any additional commentary.'),
+          DataPart('audio/wav', audioBytes),
+        ]);
+
+        final response = await model.generateContent([content]);
+        
+        if (response.text != null && response.text!.isNotEmpty) {
+          setState(() {
+            _transcribedText = response.text!;
+            _descriptionController.text = _transcribedText;
+            _isTranscribing = false;
+          });
+          
+          // Auto-detect language and translate if needed
+          await _detectAndTranslate();
+        } else {
+          throw Exception('No transcription received from AI service');
+        }
+      } catch (aiError) {
+        // Fallback to mock transcription if AI service fails
+        setState(() {
+          _transcribedText = "Safety concern recorded - AI transcription service unavailable. Please manually describe the concern.";
+          _descriptionController.text = _transcribedText;
+          _isTranscribing = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('AI transcription unavailable. Please manually describe the safety concern.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        
+        // Auto-detect language and translate if needed
+        await _detectAndTranslate();
+      }
       
     } catch (e) {
       setState(() {
@@ -167,8 +208,21 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
     try {
       final translator = GoogleTranslator();
       
-      // For now, assume English since language detection requires additional setup
-      final detectedLanguage = 'en';
+      // Language detection based on configured patterns
+      String detectedLanguage = 'en';
+      
+      final lowerText = _transcribedText.toLowerCase();
+      
+      // Check each supported language's patterns
+      for (final language in AIConfig.languagePatterns.keys) {
+        final patterns = AIConfig.languagePatterns[language]!;
+        final wordCount = patterns.where((word) => lowerText.contains(word)).length;
+        
+        if (wordCount >= 2) {
+          detectedLanguage = language;
+          break;
+        }
+      }
       
       setState(() {
         _originalLanguage = detectedLanguage;
@@ -176,18 +230,36 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
 
       // If not English, translate to English
       if (detectedLanguage != 'en') {
-        final translation = await translator.translate(
-          _transcribedText,
-          from: detectedLanguage,
-          to: 'en',
-        );
-        
-        setState(() {
-          _translatedText = translation.text;
-          _isTranslating = false;
-        });
+        try {
+          final translation = await translator.translate(
+            _transcribedText,
+            from: detectedLanguage,
+            to: 'en',
+          );
+          
+          setState(() {
+            _translatedText = translation.text;
+            _isTranslating = false;
+          });
+        } catch (translationError) {
+          // If translation fails, keep original text
+          setState(() {
+            _translatedText = '';
+            _isTranslating = false;
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Translation unavailable. Original text preserved.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
       } else {
         setState(() {
+          _translatedText = '';
           _isTranslating = false;
         });
       }
