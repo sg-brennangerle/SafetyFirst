@@ -6,7 +6,7 @@ import '../models/job.dart';
 class SafetyProvider with ChangeNotifier {
   User? _currentUser;
   List<Job> _assignedJobs = [];
-  List<SafetyReport> _reports = [];
+  final List<SafetyReport> _reports = [];
   bool _isLoading = false;
 
   User? get currentUser => _currentUser;

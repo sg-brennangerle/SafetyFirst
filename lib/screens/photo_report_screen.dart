@@ -98,12 +98,12 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now(),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_observedAt),
       );
-      if (time != null) {
+      if (time != null && mounted) {
         setState(() {
           _observedAt = DateTime(
             picked.year,
@@ -119,12 +119,14 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
 
   Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate() || _selectedJob == null || _imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields and take a photo'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill in all required fields and take a photo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -223,7 +225,7 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
                       Text(
                         'Take a photo and describe the safety concern',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -286,7 +288,7 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
                           width: double.infinity,
                           height: 200,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Theme.of(context).colorScheme.outline,
@@ -345,7 +347,7 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -401,7 +403,7 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
                                   job.location,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -468,7 +470,7 @@ class _PhotoReportScreenState extends State<PhotoReportScreen> {
                               ),
                               Icon(
                                 Icons.arrow_drop_down,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                             ],
                           ),

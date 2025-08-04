@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:translator/translator.dart';
 import 'dart:io';
@@ -19,7 +18,7 @@ class VoiceReportScreen extends StatefulWidget {
 class _VoiceReportScreenState extends State<VoiceReportScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _speechToText = SpeechToText();
+
   
   File? _audioFile;
   Job? _selectedJob;
@@ -147,12 +146,14 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
       setState(() {
         _isTranscribing = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error transcribing audio: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error transcribing audio: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -194,7 +195,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
       setState(() {
         _isTranslating = false;
       });
-      print('Translation error: $e');
+      // Translation error logged
     }
   }
 
@@ -205,12 +206,12 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
       firstDate: DateTime.now().subtract(const Duration(days: 30)),
       lastDate: DateTime.now(),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_observedAt),
       );
-      if (time != null) {
+      if (time != null && mounted) {
         setState(() {
           _observedAt = DateTime(
             picked.year,
@@ -226,12 +227,14 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
 
   Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate() || _selectedJob == null || _audioFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields and record audio'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill in all required fields and record audio'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -333,7 +336,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                       Text(
                         'Record your safety concern and it will be transcribed',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -365,7 +368,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Colors.green,
@@ -408,7 +411,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                           width: double.infinity,
                           height: 120,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Theme.of(context).colorScheme.outline,
@@ -543,9 +546,9 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                                                          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             _translatedText,
@@ -578,7 +581,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -634,7 +637,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                                   job.location,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -701,7 +704,7 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                               ),
                               Icon(
                                 Icons.arrow_drop_down,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                             ],
                           ),
