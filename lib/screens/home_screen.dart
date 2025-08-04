@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/safety_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
+import '../models/auth_user.dart';
 import 'text_report_screen.dart';
 import 'photo_report_screen.dart';
 import 'voice_report_screen.dart';
@@ -26,8 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final safetyProvider = Provider.of<SafetyProvider>(context);
-    final user = safetyProvider.currentUser;
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,6 +43,47 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: () => themeProvider.toggleTheme(),
             tooltip: 'Toggle Theme',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await authProvider.logout();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    const Icon(Icons.person),
+                    const SizedBox(width: 8),
+                    Text(user?.fullName ?? 'Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'company',
+                child: Row(
+                  children: [
+                    const Icon(Icons.business),
+                    const SizedBox(width: 8),
+                    Text(authProvider.currentCompany?.name ?? 'Company'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    const Icon(Icons.logout),
+                    const SizedBox(width: 8),
+                    const Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -57,120 +100,157 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Welcome Section
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.safety_check,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Welcome${user != null ? ', ${user.name}' : ''}!',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                // Compact Header Section
+                Row(
+                  children: [
+                    // Welcome and Company Info (side by side)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.safety_check,
+                                size: 24,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Welcome${user != null ? ', ${user.firstName}' : ''}!',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Report a safety concern to keep everyone safe',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                          if (authProvider.currentCompany != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.business,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    authProvider.currentCompany!.name,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (user != null) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _getRoleColor(user.role).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _getRoleLabel(user.role),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: _getRoleColor(user.role),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
+                    // Quick action icon
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.emergency,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
                 
                 // Report Options
                 Text(
-                  'How would you like to report?',
+                  'Report a Safety Concern',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 
-                const SizedBox(height: 24),
-                
-                // Text Report Option
-                _buildReportOption(
-                  context: context,
-                  icon: Icons.edit_note,
-                  title: 'Type a Concern',
-                  subtitle: 'Write a detailed description',
-                  color: Colors.blue,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const TextReportScreen()),
-                  ),
-                ),
-                
                 const SizedBox(height: 16),
                 
-                // Photo Report Option
-                _buildReportOption(
-                  context: context,
-                  icon: Icons.camera_alt,
-                  title: 'Photo a Concern',
-                  subtitle: 'Take a picture of the issue',
-                  color: Colors.green,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PhotoReportScreen()),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Voice Report Option
-                _buildReportOption(
-                  context: context,
-                  icon: Icons.mic,
-                  title: 'Voice a Concern',
-                  subtitle: 'Record your observation',
-                  color: Colors.orange,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const VoiceReportScreen()),
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Footer
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 20,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'All reports are automatically timestamped',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                // Report Options - Stacked and Larger
+                Expanded(
+                  child: Column(
+                    children: [
+                      // Text Report Option
+                      Expanded(
+                        child: _buildLargeReportOption(
+                          context: context,
+                          icon: Icons.edit_note,
+                          title: 'Text Report',
+                          subtitle: 'Write a detailed description of the safety concern',
+                          color: Colors.blue,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const TextReportScreen()),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Photo Report Option
+                      Expanded(
+                        child: _buildLargeReportOption(
+                          context: context,
+                          icon: Icons.camera_alt,
+                          title: 'Photo Report',
+                          subtitle: 'Take a picture of the safety issue',
+                          color: Colors.green,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PhotoReportScreen()),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Voice Report Option
+                      Expanded(
+                        child: _buildLargeReportOption(
+                          context: context,
+                          icon: Icons.mic,
+                          title: 'Voice Report',
+                          subtitle: 'Record your safety concern with voice guidance',
+                          color: Colors.orange,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const VoiceReportScreen()),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -181,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildReportOption({
+  Widget _buildLargeReportOption({
     required BuildContext context,
     required IconData icon,
     required String title,
@@ -195,51 +275,70 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(24.0),
-          child: Row(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,
-                  size: 32,
+                  size: 48,
                   color: color,
                 ),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+
+
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return Colors.red;
+      case UserRole.supervisor:
+        return Colors.orange;
+      case UserRole.worker:
+        return Colors.blue;
+      case UserRole.viewer:
+        return Colors.grey;
+    }
+  }
+
+  String _getRoleLabel(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Administrator';
+      case UserRole.supervisor:
+        return 'Supervisor';
+      case UserRole.worker:
+        return 'Worker';
+      case UserRole.viewer:
+        return 'Viewer';
+    }
   }
 } 

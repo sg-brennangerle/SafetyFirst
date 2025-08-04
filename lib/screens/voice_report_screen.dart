@@ -432,6 +432,52 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      
+                      // Voice Recording Guidance
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  size: 20,
+                                  color: Colors.blue[700],
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Recording Guidance',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Please include the following in your recording:',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildGuidanceItem('Your name', Icons.person),
+                            _buildGuidanceItem('Your location/area', Icons.location_on),
+                            _buildGuidanceItem('Date and time of observation', Icons.schedule),
+                            _buildGuidanceItem('Detailed description of the safety concern', Icons.description),
+                            _buildGuidanceItem('Any immediate actions needed', Icons.warning),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       
                       if (_audioFile != null) ...[
@@ -857,6 +903,30 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGuidanceItem(String text, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Colors.blue[600],
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
