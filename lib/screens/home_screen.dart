@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 
-                const Spacer(),
+                const SizedBox(height: 32),
                 
                 // Footer
                 Card(
