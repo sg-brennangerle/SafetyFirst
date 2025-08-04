@@ -37,7 +37,7 @@ dependencies:
   
   # Firebase and AI
   firebase_core: ^3.6.0
-  firebase_ai: ^0.3.0
+  google_generative_ai: ^0.3.0
   
   # Camera and media
   camera: ^0.11.0+1
@@ -45,11 +45,11 @@ dependencies:
   permission_handler: ^11.3.1
   
   # Voice recording and speech
-  record: ^5.0.4
+  record: ^5.2.1
   speech_to_text: ^6.6.0
   
   # Translation
-  translator: ^0.1.7
+  translator: ^1.0.3+1
   
   # State management
   provider: ^6.1.2
